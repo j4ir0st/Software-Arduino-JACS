@@ -37,11 +37,12 @@ void iniciar_pul(){
         case '*': 
           regresar();        
           return;
-        default:
-          goto ini;
     }
-    /* Revisa si la parada de emergencia está activa (msgbox)      
-    mensaje_pe();  //imprime mensaje de parada de emergencia
+    /* Revisa si la parada de emergencia está activa (msgbox) */     
+    if (!(PINF & B00001000)){     //Revisa si esta desactivado el pin A3
+      mensaje_pe();               //imprime mensaje de parada de emergencia
+      return;
+    }
     /* ------------------------------------------------------ */     
     /* Dosifica si se activa el pulsador (2_set_dosis) */
     if (digitalRead(PULSADOR) == 1)
