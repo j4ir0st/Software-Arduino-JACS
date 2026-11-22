@@ -9,8 +9,6 @@ HX711::HX711() {
 }
 
 HX711::HX711(byte dout, byte pd_sck, byte gain) {
-	OFFSET = 0;
-	SCALE = 1.0f;
 	begin(dout, pd_sck, gain);
 }
 
@@ -18,41 +16,17 @@ HX711::~HX711() {
 }
 
 void HX711::begin(byte dout, byte pd_sck, byte gain) {
-	PD_SCK = pd_sck;
-	DOUT = dout;
-
+	PD_SCK 	= pd_sck;
+	DOUT 	= dout;
+	
 	pinMode(PD_SCK, OUTPUT);
 	pinMode(DOUT, INPUT);
 
-	digitalWrite(PD_SCK, LOW);
 	set_gain(gain);
 }
 
 bool HX711::is_ready() {
 	return digitalRead(DOUT) == LOW;
-}
-
-bool HX711::wait_ready_retry(int retries, unsigned long delay_ms) {
-	int count = 0;
-	while (count < retries) {
-		if (is_ready()) {
-			return true;
-		}
-		delay(delay_ms);
-		count++;
-	}
-	return false;
-}
-
-bool HX711::wait_ready_timeout(unsigned long timeout, unsigned long delay_ms) {
-	unsigned long millisStarted = millis();
-	while (millis() - millisStarted < timeout) {
-		if (is_ready()) {
-			return true;
-		}
-		delay(delay_ms);
-	}
-	return false;
 }
 
 void HX711::set_gain(byte gain) {
@@ -76,77 +50,54 @@ void HX711::set_gain(byte gain) {
 }
 
 long HX711::read() {
-	// Espera que el conversor este listo con un tiempo limite de 500 ms para no bloquear el sistema
-	unsigned long timeout_start = millis();
-	while (!is_ready()) {
-		if (millis() - timeout_start > 500) {
-			return 0;
+	// wait for the chip to become ready
+	while (!is_ready());
+
+	byte data[3] = {0};
+
+	// pulse the clock pin 24 times to read the data
+	for (byte j = 3; j--;) {
+		for (char i = 8; i--;) {
+			digitalWrite(PD_SCK, HIGH);
+			bitWrite(data[j], i, digitalRead(DOUT));
+			digitalWrite(PD_SCK, LOW);
 		}
-		delay(1);
 	}
 
-	unsigned long value = 0;
-	uint8_t data[3] = { 0 };
-	uint8_t filler = 0x00;
-
-	// Lee los 24 bits usando shiftIn estandar
-	data[2] = shiftIn(DOUT, PD_SCK, MSBFIRST);
-	data[1] = shiftIn(DOUT, PD_SCK, MSBFIRST);
-	data[0] = shiftIn(DOUT, PD_SCK, MSBFIRST);
-
-	// Configura la ganancia para la siguiente lectura con pulsos adicionales de reloj
-	for (unsigned int i = 0; i < GAIN; i++) {
+	// set the channel and the gain factor for the next reading using the clock pin
+	for (int i = 0; i < GAIN; i++) {
 		digitalWrite(PD_SCK, HIGH);
-		delayMicroseconds(1);
 		digitalWrite(PD_SCK, LOW);
-		delayMicroseconds(1);
 	}
 
-	// Extension de signo para entero con signo de 32 bits (complemento a dos)
-	if (data[2] & 0x80) {
-		filler = 0xFF;
-	} else {
-		filler = 0x00;
-	}
+	data[2] ^= 0x80;
 
-	value = ( static_cast<unsigned long>(filler) << 24
-			| static_cast<unsigned long>(data[2]) << 16
-			| static_cast<unsigned long>(data[1]) << 8
-			| static_cast<unsigned long>(data[0]) );
-
-	return static_cast<long>(value);
+	return ((uint32_t) data[2] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[0];
 }
 
 long HX711::read_average(byte times) {
 	long sum = 0;
-	byte valid_reads = 0;
 	for (byte i = 0; i < times; i++) {
 		sum += read();
-		valid_reads++;
 	}
-	return (valid_reads > 0) ? (sum / valid_reads) : 0;
+	return sum / times;
 }
 
 double HX711::get_value(byte times) {
-	return (double)read_average(times) - (double)OFFSET;
+	return read_average(times) - OFFSET;
 }
 
 float HX711::get_units(byte times) {
-	if (SCALE == 0.0f) return 0.0f;
-	return (float)(get_value(times) / SCALE);
+	return get_value(times) / SCALE;
 }
 
 void HX711::tare(byte times) {
 	double sum = read_average(times);
-	set_offset((long)sum);
+	set_offset(sum);
 }
 
 void HX711::set_scale(float scale) {
-	if (scale != 0.0f) {
-		SCALE = scale;
-	} else {
-		SCALE = 1.0f;
-	}
+	SCALE = scale;
 }
 
 float HX711::get_scale() {
