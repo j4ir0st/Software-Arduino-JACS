@@ -5,6 +5,7 @@
 #include "Keypad.h"
 #include "HX711.h"
 #include <EEPROM.h>
+#include <Wire.h>
 
 /* ========================================================================== *
 /
@@ -125,5 +126,12 @@ unsigned long tiempo_ultimo_envio_serie = 0;    // Control de tiempo para teleme
 String estado_dosificador = "ESPERA";           // Estado actual reportado a Visual Basic ("ESPERA", "GRUESA", "FINA", etc.)
 boolean solicitud_detener_remoto = false;        // Bandera de parada ordenada por comando USB
 boolean conexion_pc_activa = false;             // Bandera: true solo cuando la PC (.NET) inicia comunicación activa
+
+/* ========================================================================== */
+/* CONECTIVIDAD IOT, TELEMETRÍA REMOTA A LA NUBE Y NÚMERO DE SERIE DE FÁBRICA */
+/* ========================================================================== */
+String sn_maquina = "DV1000-001";               // Número de serie de la máquina (leído de EEPROM externa I2C)
+unsigned long tiempo_ultimo_envio_iot = 0;      // Control de tiempo para telemetría IoT no bloqueante (millis)
+String buffer_recepcion_iot = "";               // Búfer para almacenar caracteres recibidos vía Serial1 (ESP32/IoT)
 
 #endif

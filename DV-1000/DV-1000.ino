@@ -17,6 +17,9 @@ void setup() {
   Serial.begin(9600);
   celda.begin(PIN_HX711_DAT, PIN_HX711_CLK);
   
+  /* Inicialización de módulo IoT / Cloud y lectura de número de serie en EEPROM */
+  inicializar_iot();
+  
   lcd.init();
   lcd.backlight();
 
@@ -35,14 +38,16 @@ void setup() {
   lcd.print("JACS MAQUINAS");
   delay(800);
   lcd.clear();
-  lcd.setCursor(4, 1);
+  lcd.setCursor(4, 0);
   lcd.print("DOSIFICADOR");
-  lcd.setCursor(6, 2);
+  lcd.setCursor(6, 1);
   lcd.print("DV-1000");
+  lcd.setCursor(0, 2);
+  lcd.print("SN:" + sn_maquina);
   lcd.setCursor(11, 3);
   lcd.print("V2022.0.2");
   cargar_valores();
-  delay(800);
+  delay(1200);
   /* ----------------------------- */
 
   /* Calibración inicial de tara */
@@ -125,10 +130,20 @@ char tec(){
       return(TECLA);
     }
 
-    // 3. Envío de telemetría a Visual Basic (solo si la PC está conectada activamente)
+    // 3. Lectura y procesamiento de comandos remotos IoT / Nube (Serial1)
+    char comando_iot = procesar_serial_iot();
+    if (comando_iot != 0){
+      TECLA = comando_iot;
+      return(TECLA);
+    }
+
+    // 4. Envío de telemetría a Visual Basic (solo si la PC está conectada activamente)
     if (conexion_pc_activa) {
       enviar_telemetria_periodica(estado_dosificador, 1000);
     }
+
+    // 5. Envío periódico de telemetría IoT a la nube / Supabase (Serial1 cada 3 segundos)
+    enviar_telemetria_iot_periodica(estado_dosificador, 3000);
   }
 }
 

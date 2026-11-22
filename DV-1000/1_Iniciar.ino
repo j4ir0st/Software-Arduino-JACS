@@ -79,6 +79,7 @@ void iniciar(){
         contador++;
         var_cont++;
         EEPROM.put(140, contador);
+        enviar_evento_descarga_iot();
         enviar_telemetria_periodica("ESPERA", 0);
       }
       else if(i_modo == 2){
@@ -88,20 +89,23 @@ void iniciar(){
         while(1){
           TECLA = teclado.getKey();
           char comando_serie = procesar_serial();
+          char comando_iot = procesar_serial_iot();
           peso = print_peso();
           enviar_telemetria_periodica("ESPERA_DESCARGA", 200);
+          enviar_telemetria_iot_periodica("ESPERA_DESCARGA", 1000);
 
           if(regresar())
             return;
 
-          /* Descarga activada por tecla '#' o comando USB (sin sensor mecánico de descarga) */
-          if(TECLA == '#' || comando_serie == '#'){
+          /* Descarga activada por tecla '#' o comando USB / IoT (sin sensor mecánico de descarga) */
+          if(TECLA == '#' || comando_serie == '#' || comando_iot == '#'){
             estado_dosificador = "DESCARGANDO";
             enviar_trama_estado();
             descargar();
             contador++;
             var_cont++;
             EEPROM.put(140, contador);
+            enviar_evento_descarga_iot();
             enviar_telemetria_periodica("ESPERA", 0);
             break;
           }
@@ -111,6 +115,8 @@ void iniciar(){
     
     // Envía telemetría en tiempo real a Visual Basic cada 100 ms durante el ciclo
     enviar_telemetria_periodica(estado_dosificador, 100);
+    // Envía telemetría en tiempo real a la nube (Serial1) cada 500 ms durante el ciclo
+    enviar_telemetria_iot_periodica(estado_dosificador, 500);
   }
 }
 
@@ -183,9 +189,10 @@ boolean regresar(){
   // 2. Verificación del teclado físico
   TECLA = teclado.getKey();
 
-  // 3. Verificación de comandos serie USB
+  // 3. Verificación de comandos serie USB e IoT (Nube)
   char comando_serie = procesar_serial();
-  if (comando_serie == '*' || solicitud_detener_remoto) {
+  char comando_iot = procesar_serial_iot();
+  if (comando_serie == '*' || comando_iot == '*' || solicitud_detener_remoto) {
     TECLA = '*';
     solicitud_detener_remoto = false;
   }
