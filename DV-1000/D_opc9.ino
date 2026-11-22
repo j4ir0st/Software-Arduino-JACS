@@ -96,7 +96,7 @@ void reset_valores(){
 }
 void guardar(){ 
   EEPROM.put( 200, peso_ref );        // Peso referencial de calibración
-  EEPROM.put( 210, set_scale );      // Asigna la escala
+  EEPROM.put( 210, escala_calibracion );      // Asigna la escala
   EEPROM.put( 220, s_peso );         // Valor a pesar definido por set_peso
   EEPROM.put( 230, i_modo );         // Modo: 1=Automático 2=Manual
   EEPROM.put( 240, inercia );
@@ -117,7 +117,7 @@ void guardar(){
 }
 void restaurar(){
   EEPROM.get( 200, peso_ref );        // Peso referencial de calibración
-  EEPROM.get( 210, set_scale );      // Asigna la escala
+  EEPROM.get( 210, escala_calibracion );      // Asigna la escala
   EEPROM.get( 220, s_peso );         // Valor a pesar definido por set_peso
   EEPROM.get( 230, i_modo );         // Modo: 1=Automático 2=Manual
   EEPROM.get( 240, inercia );

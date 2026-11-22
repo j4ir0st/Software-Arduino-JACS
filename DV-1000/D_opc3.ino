@@ -7,11 +7,9 @@ ini:
   lcd.setCursor(0, 1);
   lcd.print("1)D1:" + String(d1));
   lcd.setCursor(0, 2);
-  lcd.print("2)D2:" + String(d2));
+  lcd.print("2)DESC:" + String(tiempo_descarga) + "ms");
   lcd.setCursor(11, 1);
   lcd.print("3)D3:" + String(d3));
-  // lcd.setCursor(11, 2);
-  // lcd.print("4)Pin:" + String(pulsador));
   lcd.setCursor(0, 3);
   lcd.print("*)Inicio");
   lcd.setCursor(19, 0);
@@ -35,9 +33,6 @@ ini:
       case '3':
         delay3();
         goto ini;
-      // case '4':
-      //   set_pin();
-      //   goto ini;
       case 'A':
         opc2();
         return;
@@ -57,11 +52,17 @@ void delay1(){
     EEPROM.get( 50, d1 );
 }
 void delay2(){
-  d2 = input_int("DELAY 2 us (" + String(d2) + ")", 0, 10000, "ms"); 
-  if (d2 != -1)
-    EEPROM.put( 60, d2 );  
-  else
-    EEPROM.get( 60, d2 );
+  tiempo_descarga = input_int("T.DESC ms (" + String(tiempo_descarga) + ")", 100, 30000, "ms"); 
+  if (tiempo_descarga != -1) {
+    d2 = tiempo_descarga;
+    EEPROM.put( 60, tiempo_descarga );  
+  } else {
+    EEPROM.get( 60, tiempo_descarga );
+    if (tiempo_descarga <= 0 || tiempo_descarga > 30000) {
+      tiempo_descarga = 2000;
+    }
+    d2 = tiempo_descarga;
+  }
 }
 void delay3(){
   d3 = input_int("DELAY 3 us (" + String(d3) + ")", 0, 10000, "ms"); 
@@ -70,10 +71,3 @@ void delay3(){
   else
     EEPROM.get( 70, d3 );
 }
-// void set_pin(){
-//   pulsador = input_int("PULSADOR (" + String(pulsador) + ")", 0, 100, ""); 
-//   if (d1 != -1)
-//     EEPROM.put( 130, pulsador );  
-//   else
-//     EEPROM.get( 130, pulsador );
-// }

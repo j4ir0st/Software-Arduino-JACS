@@ -62,18 +62,28 @@ void set_inercia(){
 void cell_read(){
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Lectura de la");
-  lcd.setCursor(0, 1);
-  lcd.print("Celda de Carga:");
+  lcd.print("Lectura de Celda:");
   lcd.setCursor(0, 3);
-  lcd.print("*)Inicio");
-  while(TECLA != '*'){
+  lcd.print("*)Salir");
+  
+  while(1){
     TECLA = teclado.getKey();
-    lcd.setCursor(6, 2);    
-    lcd.print("          ");
-    lcd.setCursor(6, 2);
-    lcd.print(cell.read());
-    delay(100);
+    if (TECLA == '*') return;
+
+    long valor_crudo = celda.read();
+    lcd.setCursor(0, 1);
+    lcd.print("VAL:                ");
+    lcd.setCursor(5, 1);
+    lcd.print(valor_crudo);
+
+    lcd.setCursor(0, 2);
+    if (valor_crudo == 0) {
+      lcd.print("ESTADO: SIN LECTURA ");
+    } else {
+      lcd.print("ESTADO: CONECTADO   ");
+    }
+
+    delay(200);
   }
 }
 void set_error(){
